@@ -67,6 +67,19 @@ int sr_read_from_server(struct sr_instance* );
 /* -- sr_router.c -- */
 void sr_init(struct sr_instance* );
 void sr_handlepacket(struct sr_instance* , uint8_t * , unsigned int , char* );
+void handle_ip_packet(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface);
+void send_icmp_packet(struct sr_instance* sr,
+        uint8_t * packet/* lent */,
+        unsigned int len,
+        char* interface/* lent */,
+        uint8_t icmp_type,
+        uint8_t icmp_code);
+struct sr_rt* sr_routing_table_prefix_match(struct sr_instance* sr, struct in_addr addr);
+bool headed_to_interface(struct sr_instance * sr, uint32_t ip_destination);
+void handle_arp_packet(struct sr_instance* sr,
+        uint8_t * packet/* lent */,
+        unsigned int len,
+        char* interface/* lent */);
 
 /* -- sr_if.c -- */
 void sr_add_interface(struct sr_instance* , const char* );
