@@ -8,16 +8,17 @@
 #include <string.h>
 #include "sr_arpcache.h"
 #include "sr_router.h"
+#include "sr_rt.h"
 #include "sr_if.h"
 #include "sr_protocol.h"
 
 void handle_arpreq(struct sr_instance* sr, struct sr_arpreq* req) {
-    // if time now - req->sent > 1.0
+    /* if time now - req->sent > 1.0 */
     if (difftime(time(NULL), req->sent) > 1.0) {
         if (req->times_sent >= 5) {
             struct sr_packet* curr = req->packets;
             while(curr){
-                //send DESTINATION HOST UNREACHABLE
+                /* send DESTINATION HOST UNREACHABLE */
                 struct sr_if* interface = sr_get_interface(sr, curr->iface);
                 uint8_t icmp_type = 0x03;
                 uint8_t icmp_code = 0x01;
@@ -28,13 +29,17 @@ void handle_arpreq(struct sr_instance* sr, struct sr_arpreq* req) {
             sr_arpreq_destroy(&sr->cache, req);
         } else {
             unsigned int header_len = sizeof(sr_ethernet_hdr_t) + sizeof(sr_arp_hdr_t);
-            uint8_t* arp_packet = malloc(len);
-            sr_ethernet_hdr_t* new_e_hdr = (sr_ethernet_hdr_t*)packet;
-            sr_arp_hdr_t* arp_header = (sr_arp_hdr_t*)(packet + sizeof(sr_ethernet_hdr_t));
+            uint8_t* arp_packet = malloc(header_len);
+            sr_ethernet_hdr_t* new_e_hdr = (sr_ethernet_hdr_t*)(arp_packet);
+            sr_arp_hdr_t* arp_header = (sr_arp_hdr_t*)(arp_packet + sizeof(sr_ethernet_hdr_t));
 
             struct in_addr addr;
             addr.s_addr = req->ip;
-            struct sr_rt * rt = sr_routing_table_prefix_match(sr, addr);
+            struct sr_rt* rt = sr_routing_table_prefix_match(sr, addr);
+            if(!rt) { /* if there is no match in the routing table */
+                printf("there was no match in the routing table!");
+                return;
+            }
             struct sr_if* new_interface = sr_get_interface(sr, rt->interface);
 
             new_e_hdr->ether_type = htons(ethertype_arp);
@@ -51,7 +56,7 @@ void handle_arpreq(struct sr_instance* sr, struct sr_arpreq* req) {
             memcpy(arp_header->ar_sha, new_interface->addr, ETHER_ADDR_LEN);
             memset(arp_header->ar_tha, 0xFF, ETHER_ADDR_LEN);
 
-            sr_send_packet(sr, arp_packet, len, new_interface->name);
+            sr_send_packet(sr, arp_packet, header_len, new_interface->name);
 
             req->sent = time(NULL);
             req->times_sent = req->times_sent + 1;
@@ -67,14 +72,14 @@ void handle_arpreq(struct sr_instance* sr, struct sr_arpreq* req) {
 */
 void sr_arpcache_sweepreqs(struct sr_instance *sr) { 
     /* Fill this in */
-    // for each request on sr->cache.requests:
-    //        handle_arpreq(request)
+    /* for each request on sr->cache.requests:
+           handle_arpreq(request) */
     struct sr_arpreq* req = sr->cache.requests;
     while(req) {
-        //save next pointer first
+        /* save next pointer first */
         struct sr_arpreq* next_req = req->next;
         handle_arpreq(sr, req);
-        req = req->next;
+        req = next_req;
     }
 }
 
