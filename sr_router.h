@@ -70,7 +70,7 @@ void sr_handlepacket(struct sr_instance* , uint8_t * , unsigned int , char* );
 void handle_ip_packet(struct sr_instance* sr, uint8_t * packet, unsigned int len, char* interface);
 void send_icmp_packet(struct sr_instance* sr,
         uint8_t * packet/* lent */,
-        struct sr_if* interface/* lent */,
+        char * interface/* lent */,
         uint8_t icmp_type,
         uint8_t icmp_code);
 struct sr_rt* sr_routing_table_prefix_match(struct sr_instance* sr, struct in_addr addr);
@@ -85,5 +85,6 @@ void sr_add_interface(struct sr_instance* , const char* );
 void sr_set_ether_ip(struct sr_instance* , uint32_t );
 void sr_set_ether_addr(struct sr_instance* , const unsigned char* );
 void sr_print_if_list(struct sr_instance* );
+int sr_send_arp(struct sr_instance* sr, unsigned short ar_op, unsigned char ar_tha[ETHER_ADDR_LEN], uint32_t ar_tip);
 
 #endif /* SR_ROUTER_H */
